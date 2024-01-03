@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import intrasom
 import http.server
@@ -79,6 +80,7 @@ server = socketserver.TCPServer((host, port), MyRequestHandler)
 
 # Start the server
 print(f"Server running on {host}:{port}")
+os.makedirs('Results', exist_ok=True)
 server.serve_forever()
 
 
