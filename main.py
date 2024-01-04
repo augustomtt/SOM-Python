@@ -35,8 +35,10 @@ def train(data):
         save_nan_hist = True,
         pred_size=0)
     som_test.train(train_len_factor=2, previous_epoch = True)
-    print(som_test.results_dataframe)
-    return som_test.results_dataframe
+    # print(som_test.results_dataframe)
+    # return som_test.results_dataframe
+    print(som_test.neurons_dataframe)
+    return som_test.neurons_dataframe
 class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
@@ -46,9 +48,13 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         # pasar body a json
         json_data = json.loads(post_data)
 
-        data = procesarJSON(json_data)  
-        resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
-        resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
+        # data = procesarJSON(json_data)  
+        # resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
+        # resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
+
+        with open('archivo.json', 'r') as file:
+            datos = json.load(file)
+        datos_json = json.dumps(datos)
 
         self.send_response(200)  # HTTP 200 OK response
         self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
@@ -57,7 +63,8 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Access-Control-Max-Age', '1000')
         self.send_header('Access-Control-Allow-Headers', '*')
         self.end_headers()
-        self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
+        # self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
+        self.wfile.write(datos_json.encode()) 
         self.wfile.flush()
     
     #POR AHORA NO HAY NADA QUE USE GET, LO COMENTO
