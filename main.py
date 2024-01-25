@@ -20,29 +20,29 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
     print(df)
     return df
     
-def train(data):
-    mapsize = (24,14)
-    som_test = intrasom.SOMFactory.build(data,
-        mask=-9999,
-        mapsize=mapsize,
-        mapshape='toroid',
-        lattice='hexa',
-        normalization='var',
-        initialization='random',
-        neighborhood='gaussian',
-        training='batch',
-        name='Ejemplo',
-        component_names=None,
-        unit_names = None,
-        sample_names=None,
-        missing=True,
-        save_nan_hist = True,
-        pred_size=0)
-    som_test.train(train_len_factor=2, previous_epoch = True)
-    # print(som_test.results_dataframe)
-    # return som_test.results_dataframe
-    print(som_test.neurons_dataframe)
-    return som_test.neurons_dataframe
+# def train(data):
+#     mapsize = (24,14)
+#     som_test = intrasom.SOMFactory.build(data,
+#         mask=-9999,
+#         mapsize=mapsize,
+#         mapshape='toroid',
+#         lattice='hexa',
+#         normalization='var',
+#         initialization='random',
+#         neighborhood='gaussian',
+#         training='batch',
+#         name='Ejemplo',
+#         component_names=None,
+#         unit_names = None,
+#         sample_names=None,
+#         missing=True,
+#         save_nan_hist = True,
+#         pred_size=0)
+#     som_test.train(train_len_factor=2, previous_epoch = True)
+#     # print(som_test.results_dataframe)
+#     # return som_test.results_dataframe
+#     print(som_test.neurons_dataframe)
+#     return som_test.neurons_dataframe
 
 def train_som_test(data):
     mapsize = (24,14)
@@ -135,6 +135,45 @@ def bmu_return(datos,self):
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
     self = ok200(self)
     self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
+    self.wfile.flush() 
+
+def bmu_returnPrueba(datos,self):
+    print("bmuuuuu")
+    # json_data = json.loads(datos)
+    # data = procesarJSON(json_data)  
+    # som_test = train_som_test(data)
+    # resultados_bmu = som_test.neurons_dataframe
+    # resultados_bmu.to_csv('resultados_bmu.csv', index=False) ###
+    # resultado_umat = tuplas_umat(som_test)
+    # with open('resultado_umat.json', 'w') as archivo_json: ###
+    #     json.dump(resultado_umat, archivo_json, indent=2) ###
+    resultados_bmu = pd.read_csv('resultados_bmu.csv')
+    with open('resultado_umat.json', 'r') as archivo_json:
+        resultado_umat = json.load(archivo_json)
+    resultados_bmu_json = resultados_bmu.to_json(orient='split')
+    resultados_bmu_objeto = json.loads(resultados_bmu_json)
+
+    mapa = {
+        'bmu': resultados_bmu_objeto,  # Convertir el JSON a un objeto de Python
+        'umat': resultado_umat,
+    }
+
+    json_str = json.dumps(mapa, indent=2)
+
+    # resultados_bmu = pd.DataFrame.to_json(resultados_bmu)
+    # resultado_umat = json.dumps(resultado_umat, indent=2)
+
+    # mapa = {
+    #     'bmu': resultados_bmu,
+    #     'umat': resultado_umat,
+    # }
+
+    # json_str = json.dumps(mapa)
+    print(mapa)
+    # resultado = json.dumps(lista, indent=2)
+    # print(resultado)
+    self = ok200(self)
+    self.wfile.write(json_str.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush()
 
 def umat_return(datos,self):
