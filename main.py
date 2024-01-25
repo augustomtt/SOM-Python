@@ -107,12 +107,7 @@ def tuplas_umat(som_test):
     datos_para_csv = [(i + 1, j) for i, (_, j) in enumerate(datos_para_csv)]
     return datos_para_csv
 
-
-def json_return(datos,self):
-    print("jsonnnnnnnn")
-    with open('archivo.json', 'r') as file:
-        datos = json.load(file)
-    datos_json = json.dumps(datos)
+def ok200(self):
     self.send_response(200)  # HTTP 200 OK response
     self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
@@ -120,6 +115,15 @@ def json_return(datos,self):
     self.send_header('Access-Control-Max-Age', '1000')
     self.send_header('Access-Control-Allow-Headers', '*')
     self.end_headers()
+    return self
+    
+
+def json_return(datos,self):
+    print("jsonnnnnnnn")
+    with open('archivo.json', 'r') as file:
+        datos = json.load(file)
+    datos_json = json.dumps(datos)
+    self = ok200(self)
     self.wfile.write(datos_json.encode()) 
     self.wfile.flush()
 
@@ -129,13 +133,7 @@ def bmu_return(datos,self):
     data = procesarJSON(json_data)  
     resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
-    self.send_response(200)  # HTTP 200 OK response
-    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
-    self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
-    self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    self.send_header('Access-Control-Max-Age', '1000')
-    self.send_header('Access-Control-Allow-Headers', '*')
-    self.end_headers()
+    self = ok200(self)
     self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush()
 
@@ -145,13 +143,7 @@ def umat_return(datos,self):
     som_test = train_som_test(data)
     result = tuplas_umat(som_test)
     resultados_entrenamiento = pd.DataFrame.to_json(result)
-    self.send_response(200)  # HTTP 200 OK response
-    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
-    self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
-    self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    self.send_header('Access-Control-Max-Age', '1000')
-    self.send_header('Access-Control-Allow-Headers', '*')
-    self.end_headers()
+    self = ok200(self)
     self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush()
 
