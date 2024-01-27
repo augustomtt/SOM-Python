@@ -45,16 +45,14 @@ def train(data):
 def tuplas_umat(som_test):
     plot = PlotFactory(som_test)
     # ruta completa para los archivos
-    ruta_um = r'C:\Users\dell\Desktop\umatrix_expanded.txt'
-    ruta_umat = r'C:\Users\dell\Desktop\umatrix_not_expanded.txt'
     um = plot.build_umatrix(expanded = True)
     umat = plot.build_umatrix(expanded = False)
     # Aplana las matrices tridimensionales
-    um_flat = um.flatten()
-    umat_flat = umat.flatten()
-    # Guardar en archivos de texto con las rutas completas
-    np.savetxt(ruta_um, um_flat, fmt='%f', delimiter='\t')
-    np.savetxt(ruta_umat, umat_flat, fmt='%f', delimiter='\t')
+    # um_flat = um.flatten()
+    # umat_flat = umat.flatten()
+    # # Guardar en archivos de texto con las rutas completas
+    # np.savetxt(ruta_um, um_flat, fmt='%f', delimiter='\t')
+    # np.savetxt(ruta_umat, umat_flat, fmt='%f', delimiter='\t')
     # Funcion para normalizar los valores
     norm = mpl.colors.Normalize(vmin=np.nanmin(um), vmax=np.nanmax(um))
     # Matriz en la uqe voy a guardar los colores de las neuronas
@@ -108,13 +106,28 @@ def bmu_return(datos,self):
     json_data = json.loads(datos)
     data = procesarJSON(json_data)  
     resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
+    
+    
+    resultado_umat = tuplas_umat(resultados_entrenamiento)
+    json.dumps(resultado_umat, indent = 2)
+   
     resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
+    resultados_entrenamiento = json.dumps(resultados_entrenamiento)
+    
+    jsondata = {}
+    jsondata['Neurons'] = resultados_entrenamiento
+    jsondata['UMat'] = resultado_umat
+ 
+    jsondata = json.dumps(jsondata)
+    jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
+    jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
+    
     self = ok200(self)
-    self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
+    self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def bmu_returnPrueba(datos,self):
+def bmu_returnSinEntrenar(datos,self):
     print("bmuuuuu")
     # json_data = json.loads(datos)
     # data = procesarJSON(json_data)  
@@ -161,8 +174,8 @@ def default():
 
 def switch_case(path, datos,self):
     switch_dict = {
-        '/json': json_return,
-        '/bmu': bmu_returnPrueba,
+        '/json': bmu_returnSinEntrenar,
+        '/bmu': bmu_return,
         # '/umat': umat_return
     }
     switch_dict.get(path, default)(datos,self)
