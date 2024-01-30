@@ -20,7 +20,11 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
     print(df)
     return df
 
-def train(data):
+def train(data,parametros):
+    #--- pendiente esta parte todavia no la probé
+    col = parametros.get("col")
+    fil = parametros.get("fil")
+    #--- pendiente esta parte todavia no la probé
     mapsize = (24,14)
     som_test = intrasom.SOMFactory.build(data,
         mask=-9999,
@@ -101,11 +105,11 @@ def json_return(datos,self):
     self.wfile.write(datos_json.encode()) 
     self.wfile.flush()
 
-def bmu_return(datos,self):
+def bmu_return(datos,parametros,self):
     print("bmuuuuu")
     json_data = json.loads(datos)
     data = procesarJSON(json_data)  
-    resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
+    resultados_entrenamiento = train(data,parametros) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
     
     
     resultado_umat = tuplas_umat(resultados_entrenamiento)
@@ -127,7 +131,7 @@ def bmu_return(datos,self):
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def bmu_returnSinEntrenar(datos,self):
+def bmu_returnSinEntrenar(datos,parametros,self):
     print("bmuuuuu")
     # json_data = json.loads(datos)
     # data = procesarJSON(json_data)  
@@ -172,28 +176,29 @@ def bmu_returnSinEntrenar(datos,self):
 def default():
     print("Ejecutando caso por defecto")
 
-def switch_case(path, datos,self):
+def switch_case(datos,parametros,self):
     switch_dict = {
         '/json': bmu_returnSinEntrenar,
         '/bmu': bmu_return,
         # '/umat': umat_return
     }
-    switch_dict.get(path, default)(datos,self)
+    switch_dict.get(self.path, default)(datos,parametros,self)
 
 class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)  # agarramos el body de la request
-
-        path = self.path # tipo de llamada
-
+        
         datos_de_entrada = json.loads(post_data)
         
         json_data = datos_de_entrada.get("datos", {})
-        tipo = datos_de_entrada.get("tipo", "")
+        parametros = datos_de_entrada.get("parametros", {})
+        print("Parametros = " + parametros)
 
-        switch_case(path,json_data, self)
+        switch_case(json_data,parametros, self) #A partir del path, toma la decision de a que funcion invocar
+        
+        
         
     #POR AHORA NO HAY NADA QUE USE GET, LO COMENTO
     # def do_GET(self): 
