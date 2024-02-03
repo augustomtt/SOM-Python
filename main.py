@@ -193,7 +193,7 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         json_data = datos_de_entrada.get("datos", {})
         tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
-        switch_case(path,params,json_data, self)
+        switch_case(self.path,params,json_data, self)
 
 # Create an instance of the server with the request handler
 server = socketserver.TCPServer((host, port), MyRequestHandler)
