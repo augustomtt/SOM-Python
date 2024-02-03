@@ -20,12 +20,10 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
     print(df)
     return df
 
-def train(data,parametros):
-    #--- pendiente esta parte todavia no la probé
-    col = parametros.get("col")
-    fil = parametros.get("fil")
-    #--- pendiente esta parte todavia no la probé
-    mapsize = (24,14)
+def train(data,params):
+    fil = int(params["filas"])
+    col = int(params["columnas"])  #ojo que en el front aun no está validado que sean numeros, verificar.
+    mapsize = (fil,col)
     som_test = intrasom.SOMFactory.build(data,
         mask=-9999,
         mapsize=mapsize,
@@ -105,11 +103,11 @@ def json_return(datos,self):
     self.wfile.write(datos_json.encode()) 
     self.wfile.flush()
 
-def bmu_return(datos,parametros,self):
+def bmu_return(datos,params,self):
     print("bmuuuuu")
     json_data = json.loads(datos)
     data = procesarJSON(json_data)  
-    resultados_entrenamiento = train(data,parametros) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
+    resultados_entrenamiento = train(data,params) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
     
     
     resultado_umat = tuplas_umat(resultados_entrenamiento)
@@ -131,7 +129,7 @@ def bmu_return(datos,parametros,self):
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def bmu_returnSinEntrenar(datos,parametros,self):
+def bmu_returnSinEntrenar(datos,params,self):
     print("bmuuuuu")
     # json_data = json.loads(datos)
     # data = procesarJSON(json_data)  
@@ -176,13 +174,13 @@ def bmu_returnSinEntrenar(datos,parametros,self):
 def default():
     print("Ejecutando caso por defecto")
 
-def switch_case(datos,parametros,self):
+def switch_case(path, params,datos,self):
     switch_dict = {
         '/json': bmu_returnSinEntrenar,
         '/bmu': bmu_return,
         # '/umat': umat_return
     }
-    switch_dict.get(self.path, default)(datos,parametros,self)
+    switch_dict.get(path, default)(datos,params,self)
 
 class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -193,25 +191,9 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         datos_de_entrada = json.loads(post_data)
         
         json_data = datos_de_entrada.get("datos", {})
-        parametros = datos_de_entrada.get("parametros", {})
-        print("Parametros = " + parametros)
-
-        switch_case(json_data,parametros, self) #A partir del path, toma la decision de a que funcion invocar
-        
-        
-        
-    #POR AHORA NO HAY NADA QUE USE GET, LO COMENTO
-    # def do_GET(self): 
-    #     # Set the response status code
-    #     self.send_response(200)
-
-    #     # Set the response headers
-    #     self.send_header("Content-type", "text/html")
-    #     self.send_header('Access-Control-Allow-Origin', '*')
-    #     self.end_headers()
-
-    #     # Send the response body
-    #     self.wfile.write(b"<h1>Hello, World!</h1>")
+        tipo = datos_de_entrada.get("tipo", "")
+        params = datos_de_entrada.get("params", {})
+        switch_case(path,params,json_data, self)
 
 # Create an instance of the server with the request handler
 server = socketserver.TCPServer((host, port), MyRequestHandler)
@@ -222,6 +204,9 @@ print(f"Server running on {host}:{port}")
 os.makedirs('Results', exist_ok=True)
 server.serve_forever()
 
+#****************************************************************
+#****************************************************************
+#****************************************************************
 
 
 # dfejemplos = pd.read_json("datos.json")
