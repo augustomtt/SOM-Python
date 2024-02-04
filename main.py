@@ -7,6 +7,7 @@ import json
 from intrasom.visualization import PlotFactory
 import numpy as np
 import matplotlib as mpl
+from sklearn.preprocessing import minmax_scale
 
 # Define the server address and port
 host = "localhost"
@@ -141,6 +142,13 @@ def tuplas_umat(som_test):
     datos_para_csv = [(i + 1, j) for i, (_, j) in enumerate(datos_para_csv)]
     return datos_para_csv
 
+def tuplas_hits(som_test):
+    bmus = som_test._bmu[0].astype(int)
+    unique, counts = np.unique(bmus, return_counts=True)
+    unique = unique.astype(int).tolist()
+    counts = counts.astype(int).tolist()
+    return dict(zip(unique, counts))
+
 def ok200(self):
     self.send_response(200)  # HTTP 200 OK response
     self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
@@ -167,7 +175,11 @@ def bmu_return(datos,params,self):
     data = procesarJSON(json_data)  
     resultados_entrenamiento = train(data,params) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
     
-    
+    # prueba hits
+    resultado_hits = tuplas_hits(resultados_entrenamiento)
+    json.dumps(resultado_hits)
+
+
     resultado_umat = tuplas_umat(resultados_entrenamiento)
     json.dumps(resultado_umat, indent = 2)
    
@@ -178,6 +190,9 @@ def bmu_return(datos,params,self):
     jsondata = {}
     jsondata['Neurons'] = resultados_entrenamiento
     jsondata['UMat'] = resultado_umat
+
+    # prueba hits
+    jsondata['Hits'] = resultado_hits
  
     jsondata = json.dumps(jsondata)
     jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
