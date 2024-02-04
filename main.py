@@ -23,7 +23,7 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
 def train(data,params):
     fil = int(params["filas"])
     col = int(params["columnas"])  #ojo que en el front aun no está validado que sean numeros, verificar.
-    mapsize = (fil,col)
+    mapsize = (col,fil)
     som_test = intrasom.SOMFactory.build(data,
         mask=-9999,
         mapsize=mapsize,
@@ -63,14 +63,72 @@ def tuplas_umat(som_test):
     for j in range(som_test.mapsize[1]):
         for i in range(som_test.mapsize[0]):
             valor_actual = norm(umat[j][i])
-            vecino_derecha = norm(um[j, i, 0])
-            vecino_arriba_derecha = norm(um[j, i, 1])
-            vecino_arriba_izquierda = norm(um[j, i, 2])            
+            vecino_derecha = -1
+            if(not np.isnan(um[j, i, 0])):
+                vecino_derecha = norm(um[j, i, 0])
+            vecino_arriba_derecha = -1
+            if(not np.isnan(um[j, i, 1])):    
+                vecino_arriba_derecha = norm(um[j, i, 1])
+            vecino_arriba_izquierda = -1
+            if(not np.isnan(um[j, i, 2])):
+                vecino_arriba_izquierda = norm(um[j, i, 2])              
             # Modificar los valores en la matriz_resultante
             matriz_resultante[2 * j, 2 * i] = valor_actual  # Valor actual
             matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
             matriz_resultante[2 * j + 1, 2 * i] = vecino_arriba_izquierda  # Vecino arriba izquierda
             matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_arriba_derecha  # Vecino arriba derecha
+            
+            # if(j==0):
+            #     valor_actual = norm(umat[j][i])
+            #     vecino_derecha = -1
+            #     if(not np.isnan(um[j, i, 0])):
+            #         vecino_derecha = norm(um[j, i, 0])
+            #     vecino_arriba_derecha = -1
+            #     if(not np.isnan(um[j, i, 1])):    
+            #         vecino_arriba_derecha = norm(um[j, i, 1])
+            #     vecino_arriba_izquierda = -1
+            #     if(not np.isnan(um[j, i, 2])):
+            #         vecino_arriba_izquierda = norm(um[j, i, 2])              
+            #     # Modificar los valores en la matriz_resultante
+            #     matriz_resultante[2 * j, 2 * i] = valor_actual  # Valor actual
+            #     matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
+            #     matriz_resultante[2 * j - 1, 2 * i] = vecino_arriba_derecha  # Vecino arriba izquierda
+            #     matriz_resultante[2 * j + 1, 2 * i - 1] = vecino_arriba_izquierda # Vecino arriba derecha
+
+            # if(i==0):
+            #     valor_actual = norm(umat[j][i])
+            #     vecino_derecha = -1
+            #     if(not np.isnan(um[j, i, 0])):
+            #         vecino_derecha = norm(um[j, i, 0])
+            #     vecino_arriba_derecha = -1
+            #     if(not np.isnan(um[j, i, 1])):    
+            #         vecino_arriba_derecha = norm(um[j, i, 1])
+            #     vecino_arriba_izquierda = -1
+            #     if(not np.isnan(um[j, i, 2])):
+            #         vecino_arriba_izquierda = norm(um[j, i, 2])              
+            #     # Modificar los valores en la matriz_resultante
+            #     matriz_resultante[2 * j, 2 * i] = valor_actual  # Valor actual
+            #     matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
+            #     matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_arriba_derecha  # Vecino arriba izquierda
+            #     matriz_resultante[2 * j + 1, 2 * i - 1] = vecino_arriba_izquierda # Vecino arriba derecha
+
+
+            # if(j==0 and i==0):
+            #     valor_actual = norm(umat[j][i])
+            #     vecino_derecha = -1
+            #     if(not np.isnan(um[j, i, 0])):
+            #         vecino_derecha = norm(um[j, i, 0])
+            #     vecino_arriba_derecha = -1
+            #     if(not np.isnan(um[j, i, 1])):    
+            #         vecino_arriba_derecha = norm(um[j, i, 1])
+            #     vecino_arriba_izquierda = -1
+            #     if(not np.isnan(um[j, i, 2])):
+            #         vecino_arriba_izquierda = norm(um[j, i, 2])              
+            #     # Modificar los valores en la matriz_resultante
+            #     matriz_resultante[2 * j, 2 * i] = valor_actual  # Valor actual
+            #     matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
+            #     matriz_resultante[2 * j - 1, 2 * i] = vecino_arriba_derecha  # Vecino arriba izquierda
+            #     matriz_resultante[2 * j + 1, 2 * i - 1] = vecino_arriba_izquierda # Vecino arriba derecha
     # Redondeo a dos decimales
     matriz_redondeada = np.round(matriz_resultante, decimals=2)
     # Mostrar la matriz redondeada
