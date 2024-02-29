@@ -41,7 +41,7 @@ def train(data,params):
         missing=True,
         save_nan_hist = True,
         pred_size=0)
-    som_test.train(train_len_factor=2, previous_epoch = True)
+    som_test.train(maxtrainlen=100,train_len_factor=2, previous_epoch = True)
 
     return som_test
 
@@ -74,10 +74,10 @@ def tuplas_umat(som_test):
             if(not np.isnan(um[j, i, 2])):
                 vecino_arriba_izquierda = norm(um[j, i, 2])              
             # Modificar los valores en la matriz_resultante
-            matriz_resultante[2 * j, 2 * i] = valor_actual  # Valor actual
-            matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
-            matriz_resultante[2 * j + 1, 2 * i] = vecino_arriba_izquierda  # Vecino arriba izquierda
-            matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_arriba_derecha  # Vecino arriba derecha
+            matriz_resultante[2 * j, 2 * i] = vecino_arriba_izquierda# Valor actual
+            matriz_resultante[2 * j, 2 * i + 1] = vecino_arriba_derecha # Vecino a la derecha
+            matriz_resultante[2 * j + 1, 2 * i] = valor_actual  # Vecino arriba izquierda
+            matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_derecha  # Vecino arriba derecha
             
             # if(j==0):
             #     valor_actual = norm(umat[j][i])
