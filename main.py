@@ -25,14 +25,16 @@ def train(data,params):
     fil = int(params["filas"])
     col = int(params["columnas"])  #ojo que en el front aun no está validado que sean numeros, verificar.
     fvecindad = params["vecindad"]
+    inicializa = params["inicializacion"]
+    itera = int(params["iteraciones"])
     mapsize = (col,fil)
     som_test = intrasom.SOMFactory.build(data,
         #mask=-9999,
         mapsize=mapsize,
-        mapshape='toroid',
+        mapshape='planar',
         lattice='hexa',
         normalization='var',
-        initialization='random',
+        initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
         name='Ejemplo',
@@ -40,9 +42,9 @@ def train(data,params):
         unit_names = None,
         sample_names=None,
         #missing=True,
-        save_nan_hist = True,
+        #save_nan_hist = True,
         pred_size=0)
-    som_test.train(maxtrainlen=100,train_len_factor=2, previous_epoch = True)
+    som_test.train(maxtrainlen=itera,train_len_factor=2, previous_epoch = True)
 
     return som_test
 
