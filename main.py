@@ -24,21 +24,22 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
 def train(data,params):
     fil = int(params["filas"])
     col = int(params["columnas"])  #ojo que en el front aun no está validado que sean numeros, verificar.
+    fvecindad = params["vecindad"]
     mapsize = (col,fil)
     som_test = intrasom.SOMFactory.build(data,
-        mask=-9999,
+        #mask=-9999,
         mapsize=mapsize,
         mapshape='toroid',
         lattice='hexa',
         normalization='var',
         initialization='random',
-        neighborhood='gaussian',
+        neighborhood=fvecindad,
         training='batch',
         name='Ejemplo',
         component_names=None,
         unit_names = None,
         sample_names=None,
-        missing=True,
+        #missing=True,
         save_nan_hist = True,
         pred_size=0)
     som_test.train(maxtrainlen=100,train_len_factor=2, previous_epoch = True)
