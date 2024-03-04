@@ -70,18 +70,47 @@ def tuplas_umat(som_test):
             vecino_derecha = -1
             if(not np.isnan(um[j, i, 0])):
                 vecino_derecha = norm(um[j, i, 0])
-            vecino_arriba_derecha = -1
+            vecino_abajo_derecha = -1
             if(not np.isnan(um[j, i, 1])):    
-                vecino_arriba_derecha = norm(um[j, i, 1])
-            vecino_arriba_izquierda = -1
+                vecino_abajo_derecha = norm(um[j, i, 1])
+            vecino_abajo_izquierda = -1
             if(not np.isnan(um[j, i, 2])):
-                vecino_arriba_izquierda = norm(um[j, i, 2])              
+                vecino_abajo_izquierda = norm(um[j, i, 2])              
+            # # Modificar los valores en la matriz_resultante
+            # matriz_resultante[2 * j, 2 * i] = valor_actual# Valor actual
+            # matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
+            # matriz_resultante[2 * j + 1, 2 * i] = vecino_arriba_izquierda  # Vecino arriba izquierda
+            # matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_arriba_derecha  # Vecino arriba derecha
+
             # Modificar los valores en la matriz_resultante
-            matriz_resultante[2 * j, 2 * i] = vecino_arriba_izquierda# Valor actual
-            matriz_resultante[2 * j, 2 * i + 1] = vecino_arriba_derecha # Vecino a la derecha
-            matriz_resultante[2 * j + 1, 2 * i] = valor_actual  # Vecino arriba izquierda
-            matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_derecha  # Vecino arriba derecha
+            if j == 0 or j % 2 == 0:
+                matriz_resultante[2 * j, 2 * i] = valor_actual # Valor actual
+                matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
+                matriz_resultante[2 * j + 1, 2 * i] = vecino_abajo_derecha  # Vecino abajo derecha
+                if i != 0:
+                    # Si es la primera columna, el vecino de abajo a la izquierda no se carga porque no existe ni es valor en la matriz
+                    matriz_resultante[2 * j + 1, 2 * i - 1] = vecino_abajo_izquierda  # Vecino abajo izquierda
+                if i == (som_test.mapsize[0] -1):
+                    # si es la ultima columna, agrego un menos uno en el valor de la derecha al vecino de abajo derecha
+                    matriz_resultante[2 * j + 1, 2 * i + 1] = -1
+            else:
+                matriz_resultante[2 * j, 2 * i + 1] = valor_actual# Valor actual
+                if i != (som_test.mapsize[0] -1):
+                    # Si es la ultima columna, el vecino de la derecha no se carga porque no existe ni existe el valor en la matriz
+                    matriz_resultante[2 * j, 2 * i + 2] = vecino_derecha  # Vecino a la derecha
+                matriz_resultante[2 * j + 1, 2 * i] = vecino_abajo_izquierda  # Vecino abajo izquierda
+                matriz_resultante[2 * j + 1, 2 * i + 1] = vecino_abajo_derecha  # Vecino abajo derecha
+                if i == 0:
+                    # Si es la primera columna, el vecino izquierda (al lado del actual) es -1, porque corro toda la fila un lugar
+                    matriz_resultante[2 * j, 2 * i] = -1
             
+            # bmu = j * som_test.mapsize[0] + i + 1
+            # if bmu < 3 or (bmu > 23 and bmu < 27):
+            #     print(f"BMU = {bmu}")
+            #     print(f"valor_actual = {valor_actual}")
+            #     print(f"vecino_derecha = {vecino_derecha}")
+            #     print(f"vecino_arriba_derecha = {vecino_arriba_derecha}")
+            #     print(f"vecino_arriba_izquierda = {vecino_arriba_izquierda}")
             # if(j==0):
             #     valor_actual = norm(umat[j][i])
             #     vecino_derecha = -1
