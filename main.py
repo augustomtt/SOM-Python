@@ -28,7 +28,7 @@ def train(data,params):
     inicializa = params["inicializacion"]
     itera = int(params["iteraciones"])
     normalizacion = params["normalizacion"]
-    trainLenFactor = int(params["trainLengthFactor"])
+    trainLenFactor = int(params["factorEntrenamiento"])
     if normalizacion == "None":
         normalizacion = None
     mapsize = (col,fil)
