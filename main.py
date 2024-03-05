@@ -27,13 +27,17 @@ def train(data,params):
     fvecindad = params["vecindad"]
     inicializa = params["inicializacion"]
     itera = int(params["iteraciones"])
+    normalizacion = params["normalizacion"]
+    trainLenFactor = int(params["trainLengthFactor"])
+    if normalizacion == "None":
+        normalizacion = None
     mapsize = (col,fil)
     som_test = intrasom.SOMFactory.build(data,
         #mask=-9999,
         mapsize=mapsize,
         mapshape='planar',
         lattice='hexa',
-        normalization='var',
+        normalization=normalizacion,
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
@@ -44,7 +48,7 @@ def train(data,params):
         #missing=True,
         #save_nan_hist = True,
         pred_size=0)
-    som_test.train(maxtrainlen=itera,train_len_factor=2, previous_epoch = True)
+    som_test.train(maxtrainlen=itera,train_len_factor=trainLenFactor, previous_epoch = True)
 
     return som_test
 
