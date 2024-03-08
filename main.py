@@ -8,11 +8,16 @@ from intrasom.visualization import PlotFactory
 import numpy as np
 import matplotlib as mpl
 from sklearn.preprocessing import minmax_scale
+from sklearn.cluster import KMeans
 
 # Define the server address and port
 host = "localhost"
 port = 7777
 
+def kmeans(codebook,fil,col, k=3, init = "random", n_init=5, max_iter=200):
+    codebook = np.array(codebook)
+    kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
+    return kmeans.reshape(col,fil)
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
@@ -195,6 +200,15 @@ def ok200(self):
     self.end_headers()
     return self
     
+def error404():
+    self.send_response(404)  
+    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
+    self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
+    self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+    self.send_header('Access-Control-Max-Age', '1000')
+    self.send_header('Access-Control-Allow-Headers', '*')
+    self.end_headers()
+    return self
 
 def json_return(datos,self):
     print("jsonnnnnnnn")
@@ -218,14 +232,17 @@ def bmu_return(datos,params,self):
 
     resultado_umat = tuplas_umat(resultados_entrenamiento)
     json.dumps(resultado_umat, indent = 2)
-   
+    codebook = resultados_entrenamiento.codebook.matrix
     resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
+    
+    # codebook =  pd.DataFrame.to_json(codebook)
+    # print(codebook)
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
     resultados_entrenamiento = json.dumps(resultados_entrenamiento)
-    
     jsondata = {}
     jsondata['Neurons'] = resultados_entrenamiento
     jsondata['UMat'] = resultado_umat
+    jsondata['Codebook']= codebook.tolist()
 
     # prueba hits
     jsondata['Hits'] = resultado_hits
@@ -238,58 +255,26 @@ def bmu_return(datos,params,self):
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def bmu_returnSinEntrenar(datos,params,self):
-    print("bmuuuuu")
-    # json_data = json.loads(datos)
-    # data = procesarJSON(json_data)  
-    # som_test = train_som_test(data)
-    # resultados_bmu = som_test.neurons_dataframe
-    # resultados_bmu.to_csv('resultados_bmu.csv', index=False) ###
-    # resultado_umat = tuplas_umat(som_test)
-    # with open('resultado_umat.json', 'w') as archivo_json: ###
-    #     json.dump(resultado_umat, archivo_json, indent=2) ###
-    resultados_bmu = pd.read_csv('resultados_bmu.csv') 
-    print(resultados_bmu)
-    with open('resultado_umat.json', 'r') as archivo_json:
-        resultado_umat = json.load(archivo_json)
-    #TODO Dejar de leer de archivo y que entrene
-    resultados_bmu_json = pd.DataFrame.to_json(resultados_bmu)
-    resultados_bmu_json = json.dumps(resultados_bmu_json)
+def cluster_return(datos,params,self):
+    filas = params['filas']
+    columnas = params['columnas']
+    cant_clusters = params['cantidadClusters']
+    resultado_clustering = kmeans(datos,filas,columnas,k=cant_clusters)
     
-    jsondata = {}
-    jsondata['Neurons'] = resultados_bmu_json
-    jsondata['UMat'] = resultado_umat
- 
-    jsondata = json.dumps(jsondata)
-    jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
-    jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
-    
-    # print(json.dumps(jsondata))
     self = ok200(self)
-    self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
-    self.wfile.flush()
-
-# def umat_return(datos,self):
-#     json_data = json.loads(datos)
-#     data = procesarJSON(json_data)
-#     som_test = train(data)
-#     som_test = som_test.neurons_dataframe
-#     result = tuplas_umat(som_test)
-#     resultados_entrenamiento = pd.DataFrame.to_json(result)
-#     self = ok200(self)
-#     self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
-#     self.wfile.flush()
-
-def default():
-    print("Ejecutando caso por defecto")
+    self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
+    self.wfile.flush() 
+    
 
 def switch_case(path, params,datos,self):
-    switch_dict = {
-        '/json': bmu_returnSinEntrenar,
-        '/bmu': bmu_return,
-        # '/umat': umat_return
-    }
-    switch_dict.get(path, default)(datos,params,self)
+    
+    if (path == '/bmu'):
+        bmu_return(datos,params,self)
+    elif (path == '/clusters'): 
+        cluster_return(datos,params,self)
+    else:
+        error404(self)
+ 
 
 class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -300,7 +285,7 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         datos_de_entrada = json.loads(post_data)
         
         json_data = datos_de_entrada.get("datos", {})
-        tipo = datos_de_entrada.get("tipo", "")
+        #tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
         switch_case(self.path,params,json_data, self)
 
@@ -312,46 +297,3 @@ server = socketserver.TCPServer((host, port), MyRequestHandler)
 print(f"Server running on {host}:{port}")
 os.makedirs('Results', exist_ok=True)
 server.serve_forever()
-
-#****************************************************************
-#****************************************************************
-#****************************************************************
-
-
-# dfejemplos = pd.read_json("datos.json")
-# print(df)
-
-
-
-
-
-        # if tipo == "json":
-        #     print("jsonnnnnnnn")
-        #     with open('archivo.json', 'r') as file:
-        #         datos = json.load(file)
-        #     datos_json = json.dumps(datos)
-        #     self.send_response(200)  # HTTP 200 OK response
-        #     self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
-        #     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
-        #     self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        #     self.send_header('Access-Control-Max-Age', '1000')
-        #     self.send_header('Access-Control-Allow-Headers', '*')
-        #     self.end_headers()
-        #     self.wfile.write(datos_json.encode()) 
-        #     self.wfile.flush()
-        # else:          
-
-        #     data = procesarJSON(json_data)  
-        #     resultados_entrenamiento = train(data) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
-        #     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
-
-        #     self.send_response(200)  # HTTP 200 OK response
-        #     self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
-        #     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
-        #     self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        #     self.send_header('Access-Control-Max-Age', '1000')
-        #     self.send_header('Access-Control-Allow-Headers', '*')
-        #     self.end_headers()
-        #     # self.wfile.write(resultados_entrenamiento.encode())  # Send the resultados_entrenamiento JSON as the response
-        #     self.wfile.write(datos_json.encode()) 
-        #     self.wfile.flush()

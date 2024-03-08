@@ -9,7 +9,7 @@ Cells: 234
 --------------------------------------------------
 Initialization Parameters:
 
-Map Size: 12 columns and 8 lines
+Map Size: 24 columns and 14 lines
 Training Polygon: None
 Lattice: Hexagonal
 Normalization: Variance
@@ -22,16 +22,16 @@ Training Parameters:
 
 Rough Training:
 Size: 200
-Initial Ratio: 4.0
-Final Ratio: 1
+Initial Ratio: 8.0
+Final Ratio: 2.0
 
 Finetube Training:
 Size: 200
-Initial Ratio: 1.5
+Initial Ratio: 3.0
 Final Ratio: 1
 
 --------------------------------------------------
 Training Evaluation:
 
-Quantization Error: 0.1836
+Quantization Error: 0.0001
 Topographic Error: 0.0
