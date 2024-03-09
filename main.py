@@ -264,12 +264,23 @@ def cluster_return(datos,params,self):
     self = ok200(self)
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
+
+def bmu_prueba(datos,params,self):
+    # Abre el archivo JSON y lee su contenido
+    with open('resultadoPrueba.json', 'r') as archivo:
+        contenido_json = archivo.read()
+    # cadena_json = json.dumps(contenido_json)
+    self = ok200(self)
+    self.wfile.write(contenido_json.encode())
+    self.wfile.flush()
     
 
 def switch_case(path, params,datos,self):
     
     if (path == '/bmu'):
         bmu_return(datos,params,self)
+    elif (path == '/rapida'): 
+        bmu_prueba(datos,params,self)
     elif (path == '/clusters'): 
         cluster_return(datos,params,self)
     else:
