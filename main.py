@@ -17,7 +17,7 @@ port = 7777
 def kmeans(codebook,fil,col, k=3, init = "random", n_init=5, max_iter=200):
     codebook = np.array(codebook)
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
-    return kmeans.reshape(col,fil)
+    return kmeans.reshape(fil,col)
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
@@ -200,7 +200,7 @@ def ok200(self):
     self.end_headers()
     return self
     
-def error404():
+def error404(self):
     self.send_response(404)  
     self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
@@ -260,7 +260,7 @@ def cluster_return(datos,params,self):
     columnas = params['columnas']
     cant_clusters = params['cantidadClusters']
     resultado_clustering = kmeans(datos,filas,columnas,k=cant_clusters)
-    
+    print(resultado_clustering)
     self = ok200(self)
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
