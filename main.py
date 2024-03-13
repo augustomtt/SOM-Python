@@ -256,11 +256,10 @@ def bmu_return(datos,params,self):
     self.wfile.flush() 
 
 def cluster_return(datos,params,self):
-    filas = params['filas']
-    columnas = params['columnas']
-    cant_clusters = params['cantidadClusters']
+    filas = int(params['filas'])
+    columnas = int(params['columnas'])
+    cant_clusters = int(params['cantidadClusters'])
     resultado_clustering = kmeans(datos,filas,columnas,k=cant_clusters)
-    print(resultado_clustering)
     self = ok200(self)
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
