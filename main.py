@@ -22,7 +22,10 @@ def kmeans(codebook,fil,col, k=3, init = "random", n_init=5, max_iter=200):
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
     df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
-    df = df.astype(float)
+    try:
+        df = df.astype(float)
+    except:
+        raise
     print(df)
     return df
 
@@ -190,40 +193,51 @@ def tuplas_hits(som_test):
     counts = counts.astype(int).tolist()
     return dict(zip(unique, counts))
 
-def ok200(self):
-    self.send_response(200)  # HTTP 200 OK response
-    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
+def headers(self):
     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
     self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
     self.send_header('Access-Control-Max-Age', '1000')
     self.send_header('Access-Control-Allow-Headers', '*')
+    return self
+
+def ok200(self):
+    self.send_response(200)  # HTTP 200 OK response
+    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
+    self = headers(self)
     self.end_headers()
     return self
     
 def error404(self):
     self.send_response(404)  
-    self.send_header('Content-type', 'application/json')  # Set the response content type to JSON
-    self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
-    self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-    self.send_header('Access-Control-Max-Age', '1000')
-    self.send_header('Access-Control-Allow-Headers', '*')
+    self = headers(self)
     self.end_headers()
     return self
 
-def json_return(datos,self):
+def error400(self, mensaje_error):
+    self.send_response(400)
+    self.send_header('Content-type', 'text/plain')
+    self.end_headers()
+    self.wfile.write(bytes("Error: %s" %mensaje_error, 'utf-8'))
+    self.wfile.flush()
+
+def json_return(datos, self):
     print("jsonnnnnnnn")
     with open('archivo.json', 'r') as file:
         datos = json.load(file)
     datos_json = json.dumps(datos)
     self = ok200(self)
-    self.wfile.write(datos_json.encode()) 
+    self.wfile.write(datos_json.encode())
     self.wfile.flush()
 
 def bmu_return(datos,params,self):
     print("bmuuuuu")
     json_data = json.loads(datos)
-    data = procesarJSON(json_data)  
-    resultados_entrenamiento = train(data,params) #TODO los parametros de entrenamiento hay que pasarlos en realidad, esta todo default
+    try:
+        data = procesarJSON(json_data)
+    except Exception as e: #Error al validar datos! Hay que avisar
+       self = error400(self,str(e))
+        
+    resultados_entrenamiento = train(data,params)
     
     # prueba hits
     resultado_hits = tuplas_hits(resultados_entrenamiento)
