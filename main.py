@@ -14,7 +14,7 @@ from sklearn.cluster import KMeans
 host = "localhost"
 port = 7777
 
-def kmeans(codebook,fil,col, k=3, init = "random", n_init=5, max_iter=200):
+def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
@@ -78,16 +78,16 @@ def tuplas_umat(som_test):
     # Cada neurona me da cuatro valores, por lo que por cada una modico cuatro lugares en l amatriz
     for j in range(som_test.mapsize[1]):
         for i in range(som_test.mapsize[0]):
-            valor_actual = norm(umat[j][i])
+            valor_actual = umat[j][i]
             vecino_derecha = -1
             if(not np.isnan(um[j, i, 0])):
-                vecino_derecha = norm(um[j, i, 0])
+                vecino_derecha = um[j, i, 0]
             vecino_abajo_derecha = -1
             if(not np.isnan(um[j, i, 1])):    
-                vecino_abajo_derecha = norm(um[j, i, 1])
+                vecino_abajo_derecha = um[j, i, 1]
             vecino_abajo_izquierda = -1
             if(not np.isnan(um[j, i, 2])):
-                vecino_abajo_izquierda = norm(um[j, i, 2])              
+                vecino_abajo_izquierda = um[j, i, 2]            
             # # Modificar los valores en la matriz_resultante
             # matriz_resultante[2 * j, 2 * i] = valor_actual# Valor actual
             # matriz_resultante[2 * j, 2 * i + 1] = vecino_derecha  # Vecino a la derecha
