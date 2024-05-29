@@ -195,7 +195,12 @@ def tuplas_hits(som_test):
 def procesaLabelsHits(dictLabels):
     nuevo_dict = {} #Esta funcion es necesaria para pasar de int64 a int. Sino el json no lo convierte
     for x in dictLabels:
-        nuevo_dict[int(x)] = dictLabels[x]
+        if (type (dictLabels[x]) is str):
+            lista = []
+            lista.append(dictLabels[x])
+            nuevo_dict[int(x)] = lista
+        else:
+            nuevo_dict[int(x)] = dictLabels[x]
     return nuevo_dict
 
 def headers(self):
