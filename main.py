@@ -57,7 +57,6 @@ def train(data,params):
         #save_nan_hist = True,
         pred_size=0)
     som_test.train(maxtrainlen=itera,train_len_factor=trainLenFactor, previous_epoch = True)
-
     return som_test
 
 def tuplas_umat(som_test):
@@ -193,6 +192,12 @@ def tuplas_hits(som_test):
     counts = counts.astype(int).tolist()
     return dict(zip(unique, counts))
 
+def procesaLabelsHits(dictLabels):
+    nuevo_dict = {} #Esta funcion es necesaria para pasar de int64 a int. Sino el json no lo convierte
+    for x in dictLabels:
+        nuevo_dict[int(x)] = dictLabels[x]
+    return nuevo_dict
+
 def headers(self):
     self.send_header('Access-Control-Allow-Origin', '*')  # Permitir cualquier origen
     self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
@@ -237,17 +242,17 @@ def bmu_return(datos,params,self):
     except Exception as e: #Error al validar datos! Hay que avisar
        self = error400(self,str(e))
         
-    resultados_entrenamiento = train(data,params)
+    entrenamiento = train(data,params)
     
     # prueba hits
-    resultado_hits = tuplas_hits(resultados_entrenamiento)
+    resultado_hits = tuplas_hits(entrenamiento)
     json.dumps(resultado_hits)
 
 
-    resultado_umat = tuplas_umat(resultados_entrenamiento)
+    resultado_umat = tuplas_umat(entrenamiento)
     json.dumps(resultado_umat, indent = 2)
-    codebook = resultados_entrenamiento.codebook.matrix
-    resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
+    codebook = entrenamiento.codebook.matrix
+    resultados_entrenamiento = entrenamiento.neurons_dataframe
     
     # codebook =  pd.DataFrame.to_json(codebook)
     # print(codebook)
@@ -257,8 +262,8 @@ def bmu_return(datos,params,self):
     jsondata['Neurons'] = resultados_entrenamiento
     jsondata['UMat'] = resultado_umat
     jsondata['Codebook']= codebook.tolist()
-
-    # prueba hits
+    jsondata['HitsLabels'] = procesaLabelsHits(entrenamiento.rep_sample())
+    
     jsondata['Hits'] = resultado_hits
  
     jsondata = json.dumps(jsondata)
