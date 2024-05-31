@@ -21,12 +21,21 @@ def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
-    df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
+    # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
     try:
         df = df.astype(float)
     except:
         raise
     print(df)
+    return df
+
+def procesarJSON_string(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
+    df = pd.DataFrame(data)
+    # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
+    try:
+        df = df.astype(str)
+    except:
+        raise
     return df
 
 def train(data,params):
@@ -229,7 +238,23 @@ def json_return(datos, self):
     self.wfile.write(datos_json.encode())
     self.wfile.flush()
 
-def bmu_return(datos,params,self):
+def df_etiquetas(results_dataframe, etiquetas):
+    json_data_etiquetas = json.loads(etiquetas)
+    data_etiquetas = procesarJSON_string(json_data_etiquetas)
+    etiquetas_df = pd.DataFrame(data_etiquetas)
+    etiquetas_df.columns = [col.strip() for col in etiquetas_df.columns]
+
+    nuevo_df = pd.DataFrame({
+        'Dato': range(len(results_dataframe)),  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'BMU': results_dataframe['BMU']
+    })
+
+    for column in etiquetas_df.columns:
+        nuevo_df[column] = etiquetas_df[column].str.strip()
+    
+    return nuevo_df
+
+def bmu_return(datos,params,etiquetas,self):
     print("bmuuuuu")
     json_data = json.loads(datos)
     try:
@@ -237,29 +262,38 @@ def bmu_return(datos,params,self):
     except Exception as e: #Error al validar datos! Hay que avisar
        self = error400(self,str(e))
         
+    # ENTRENO 
     resultados_entrenamiento = train(data,params)
+
+    # ARMO RESPUESTA ETIQUETAS
+    etiquetas_df = df_etiquetas(resultados_entrenamiento.results_dataframe, etiquetas)
+    etiquetas_df = pd.DataFrame.to_json(etiquetas_df)
+    etiquetas_df = json.dumps(etiquetas_df)
     
-    # prueba hits
+    
+    # ARMO RESPUESTA hits
     resultado_hits = tuplas_hits(resultados_entrenamiento)
     json.dumps(resultado_hits)
 
-
+    # ARMO RESPUESTA umat
     resultado_umat = tuplas_umat(resultados_entrenamiento)
     json.dumps(resultado_umat, indent = 2)
+
+    # ARMO RESPUESTA codebook
     codebook = resultados_entrenamiento.codebook.matrix
+
+    # ARMO RESPUESTA BMU
     resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
-    
-    # codebook =  pd.DataFrame.to_json(codebook)
-    # print(codebook)
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
     resultados_entrenamiento = json.dumps(resultados_entrenamiento)
+    
+    # DEVUELVO INFO
     jsondata = {}
     jsondata['Neurons'] = resultados_entrenamiento
     jsondata['UMat'] = resultado_umat
     jsondata['Codebook']= codebook.tolist()
-
-    # prueba hits
     jsondata['Hits'] = resultado_hits
+    jsondata['Etiquetas'] = etiquetas_df
  
     jsondata = json.dumps(jsondata)
     jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
@@ -288,10 +322,10 @@ def bmu_prueba(datos,params,self):
     self.wfile.flush()
     
 
-def switch_case(path, params,datos,self):
+def switch_case(path, params,datos,etiquetas,self):
     
     if (path == '/bmu'):
-        bmu_return(datos,params,self)
+        bmu_return(datos,params,etiquetas,self)
     elif (path == '/rapida'): 
         bmu_prueba(datos,params,self)
     elif (path == '/clusters'): 
@@ -309,9 +343,10 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         datos_de_entrada = json.loads(post_data)
         
         json_data = datos_de_entrada.get("datos", {})
+        etiquetas = datos_de_entrada.get("etiquetas", {})
         #tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
-        switch_case(self.path,params,json_data, self)
+        switch_case(self.path,params,json_data,etiquetas, self)
 
 # Create an instance of the server with the request handler
 server = socketserver.TCPServer((host, port), MyRequestHandler)
