@@ -315,7 +315,7 @@ def cluster_return(datos,params,self):
 def nuevosdatos_return(datos,params,etiquetas, codebook,self):
     nuevo_df = pd.DataFrame({
         'Dato': [1,2,3,4],  # Asumiendo que quieres numerar cada fila como 'Dato'
-        'BMU': [4,6,8,10]
+        'BMU': [4,6,8,6]
     })
 
     nuevo_df = pd.DataFrame.to_json(nuevo_df)
