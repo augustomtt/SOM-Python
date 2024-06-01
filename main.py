@@ -312,6 +312,27 @@ def cluster_return(datos,params,self):
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
+def nuevosdatos_return(datos,params,etiquetas, codebook,self):
+    nuevo_df = pd.DataFrame({
+        'Dato': [1,2,3,4],  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'BMU': [4,6,8,10]
+    })
+
+    nuevo_df = pd.DataFrame.to_json(nuevo_df)
+    nuevo_df = json.dumps(nuevo_df)
+    
+    # DEVUELVO INFO
+    jsondata = {}
+    jsondata['Resultado'] = nuevo_df
+
+    jsondata = json.dumps(jsondata)
+    jsondata = jsondata.replace('\\','') 
+    jsondata = jsondata.replace('""','') 
+    
+    self = ok200(self)
+    self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
+    self.wfile.flush() 
+
 def bmu_prueba(datos,params,self):
     # Abre el archivo JSON y lee su contenido
     with open('resultadoPrueba.json', 'r') as archivo:
@@ -322,7 +343,7 @@ def bmu_prueba(datos,params,self):
     self.wfile.flush()
     
 
-def switch_case(path, params,datos,etiquetas,self):
+def switch_case(path, params,datos,etiquetas,codebook,self):
     
     if (path == '/bmu'):
         bmu_return(datos,params,etiquetas,self)
@@ -330,6 +351,8 @@ def switch_case(path, params,datos,etiquetas,self):
         bmu_prueba(datos,params,self)
     elif (path == '/clusters'): 
         cluster_return(datos,params,self)
+    elif (path == '/nuevosDatos'): 
+        nuevosdatos_return(datos,params,etiquetas, codebook,self)
     else:
         error404(self)
  
@@ -344,9 +367,10 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         
         json_data = datos_de_entrada.get("datos", {})
         etiquetas = datos_de_entrada.get("etiquetas", {})
+        codebook = datos_de_entrada.get("codebook", {})
         #tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
-        switch_case(self.path,params,json_data,etiquetas, self)
+        switch_case(self.path,params,json_data,etiquetas,codebook, self)
 
 # Create an instance of the server with the request handler
 server = socketserver.TCPServer((host, port), MyRequestHandler)
