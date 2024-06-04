@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib as mpl
 from sklearn.preprocessing import minmax_scale
 from sklearn.cluster import KMeans
+from datetime import datetime
 
 # Define the server address and port
 host = "localhost"
@@ -43,9 +44,13 @@ def train(data,params):
     col = int(params["columnas"])  
     fvecindad = params["vecindad"]
     inicializa = params["inicializacion"]
-    itera = int(params["iteraciones"])
+    rough = int(params["rough"])
+    if(rough==0):
+        rough = None
+    finetuning = int(params["finetuning"])
+    if(finetuning==0):
+        rough = None
     normalizacion = params["normalizacion"]
-    trainLenFactor = int(params["factorEntrenamiento"])
     if normalizacion == "None":
         normalizacion = None
     mapsize = (col,fil)
@@ -58,14 +63,15 @@ def train(data,params):
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
-        name='Ejemplo',
+        name=str(datetime.now()),
         component_names=None,
         unit_names = None,
         sample_names=None,
         #missing=True,
         #save_nan_hist = True,
         pred_size=0)
-    som_test.train(maxtrainlen=itera,train_len_factor=trainLenFactor, previous_epoch = True)
+    som_test.train(summary=False,train_rough_len=rough,train_finetune_len=finetuning, previous_epoch = True)
+    #EL SUMMARY EN FALSE ES PARA QUE NO GENERE LOS TXT MOLESTOS, PERO OJO QUE EN ALGUN MOMENTO PODRÍAMOS SACER INFO IMPORTANTE DE AHÍ
 
     return som_test
 
