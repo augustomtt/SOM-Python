@@ -14,6 +14,15 @@ from sklearn.cluster import KMeans
 host = "localhost"
 port = 7777
 
+def find_bmus(som_codebook, input_data_batch):
+    som_codebook = np.array(som_codebook)
+    input_data_batch = np.array(input_data_batch)
+    # Calculate the Euclidean distance between each input data point and each neuron in the SOM
+    distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
+    # Find the index of the neuron with the minimum distance for each input data point
+    bmu_indices = np.argmin(distances, axis=0)
+    return bmu_indices
+
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
@@ -313,9 +322,13 @@ def cluster_return(datos,params,self):
     self.wfile.flush() 
 
 def nuevosdatos_return(datos,params,etiquetas, codebook,self):
+
+    datos = json.loads(datos)
+    datos = [[float(value) for value in entry.values()] for entry in datos]
+    bmus = find_bmus(codebook,datos)
     nuevo_df = pd.DataFrame({
-        'Dato': [1,2,3,4],  # Asumiendo que quieres numerar cada fila como 'Dato'
-        'BMU': [4,6,8,6]
+        'Dato': datos,  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'BMU': bmus
     })
 
     nuevo_df = pd.DataFrame.to_json(nuevo_df)
