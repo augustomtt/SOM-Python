@@ -161,5 +161,6 @@ cython_debug/
 
 #Son generados por intraSom
 *.parquet 
+*.txt
 Results/
 Intrasom_report_Ejemplo.txt
