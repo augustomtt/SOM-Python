@@ -15,6 +15,15 @@ from datetime import datetime
 host = "localhost"
 port = 7777
 
+def find_bmus(som_codebook, input_data_batch):
+    som_codebook = np.array(som_codebook)
+    input_data_batch = np.array(input_data_batch)
+    # Calculate the Euclidean distance between each input data point and each neuron in the SOM
+    distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
+    # Find the index of the neuron with the minimum distance for each input data point
+    bmu_indices = np.argmin(distances, axis=0)
+    return bmu_indices
+
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
@@ -318,6 +327,31 @@ def cluster_return(datos,params,self):
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
+def nuevosdatos_return(datos,params,etiquetas, codebook,self):
+
+    datos = json.loads(datos)
+    datos = [[float(value) for value in entry.values()] for entry in datos]
+    bmus = find_bmus(codebook,datos)
+    nuevo_df = pd.DataFrame({
+        'Dato': datos,  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'BMU': bmus
+    })
+
+    nuevo_df = pd.DataFrame.to_json(nuevo_df)
+    nuevo_df = json.dumps(nuevo_df)
+    
+    # DEVUELVO INFO
+    jsondata = {}
+    jsondata['Resultado'] = nuevo_df
+
+    jsondata = json.dumps(jsondata)
+    jsondata = jsondata.replace('\\','') 
+    jsondata = jsondata.replace('""','') 
+    
+    self = ok200(self)
+    self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
+    self.wfile.flush() 
+
 def bmu_prueba(datos,params,self):
     # Abre el archivo JSON y lee su contenido
     with open('resultadoPrueba.json', 'r') as archivo:
@@ -328,7 +362,7 @@ def bmu_prueba(datos,params,self):
     self.wfile.flush()
     
 
-def switch_case(path, params,datos,etiquetas,self):
+def switch_case(path, params,datos,etiquetas,codebook,self):
     
     if (path == '/bmu'):
         bmu_return(datos,params,etiquetas,self)
@@ -336,6 +370,8 @@ def switch_case(path, params,datos,etiquetas,self):
         bmu_prueba(datos,params,self)
     elif (path == '/clusters'): 
         cluster_return(datos,params,self)
+    elif (path == '/nuevosDatos'): 
+        nuevosdatos_return(datos,params,etiquetas, codebook,self)
     else:
         error404(self)
  
@@ -350,9 +386,10 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         
         json_data = datos_de_entrada.get("datos", {})
         etiquetas = datos_de_entrada.get("etiquetas", {})
+        codebook = datos_de_entrada.get("codebook", {})
         #tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
-        switch_case(self.path,params,json_data,etiquetas, self)
+        switch_case(self.path,params,json_data,etiquetas,codebook, self)
 
 # Create an instance of the server with the request handler
 server = socketserver.TCPServer((host, port), MyRequestHandler)
