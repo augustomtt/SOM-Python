@@ -37,7 +37,7 @@ def find_bmus(params,som_codebook, input_data_batch):
 
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
-    codebook = normalizar(codebook)
+    #codebook = normalizar(codebook) Esto en caso que mandemos el codebook desnormalizado
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
 
