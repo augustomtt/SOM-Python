@@ -72,7 +72,7 @@ def train(data,params):
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
-        name=str(datetime.now()),
+        # name=str(datetime.now()), comento
         component_names=None,
         unit_names = None,
         sample_names=None,
