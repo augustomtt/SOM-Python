@@ -28,11 +28,12 @@ def find_bmus(params,som_codebook, input_data_batch):
     som_codebook = np.array(som_codebook)
     input_data_batch = np.array(input_data_batch)
     input_data_batch = normalizar(input_data_batch)
-    som_codebook = normalizar(som_codebook)
+    # som_codebook = normalizar(som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
     bmu_indices = np.argmin(distances, axis=0)
+    bmu_indices += 1
     return bmu_indices
 
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
