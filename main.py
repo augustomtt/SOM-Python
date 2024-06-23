@@ -15,17 +15,30 @@ from datetime import datetime
 host = "localhost"
 port = 7777
 
-def find_bmus(som_codebook, input_data_batch):
+def normalizar(datos):
+    with open("datos.json", "r") as file:
+        data = json.load(file)
+    normalizer = intrasom.object_functions.NormalizerFactory.build("var")
+    data = procesarJSON(data)
+    data = np.array(data)
+
+    return normalizer.normalize_by(data,datos)
+#agregar datos a esta funcion
+def find_bmus(params,som_codebook, input_data_batch):
     som_codebook = np.array(som_codebook)
     input_data_batch = np.array(input_data_batch)
+    input_data_batch = normalizar(input_data_batch)
+    # som_codebook = normalizar(som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
     bmu_indices = np.argmin(distances, axis=0)
+    bmu_indices += 1
     return bmu_indices
 
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
+    #codebook = normalizar(codebook) Esto en caso que mandemos el codebook desnormalizado
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
 
@@ -36,7 +49,6 @@ def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dar
         df = df.astype(float)
     except:
         raise
-    print(df)
     return df
 
 def procesarJSON_string(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
@@ -72,7 +84,7 @@ def train(data,params):
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
-        name=str(datetime.now()),
+        name='Ejemplo',
         component_names=None,
         unit_names = None,
         sample_names=None,
@@ -272,11 +284,14 @@ def df_etiquetas(results_dataframe, etiquetas):
 def bmu_return(datos,params,etiquetas,self):
     print("bmuuuuu")
     json_data = json.loads(datos)
+    #Cargo los datos en el json
+    with open("datos.json", "w") as file:
+        json.dump(json_data, file)
     try:
         data = procesarJSON(json_data)
     except Exception as e: #Error al validar datos! Hay que avisar
        self = error400(self,str(e))
-        
+    
     # ENTRENO 
     resultados_entrenamiento = train(data,params)
 
@@ -296,12 +311,18 @@ def bmu_return(datos,params,etiquetas,self):
 
     # ARMO RESPUESTA codebook
     codebook = resultados_entrenamiento.codebook.matrix
+    #Desnormalizacion de codebook
+    #codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
+    #codebook = np.round(codebook)
 
+    #Medias y dispersiones
+    #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
+  
     # ARMO RESPUESTA BMU
     resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
     resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
     resultados_entrenamiento = json.dumps(resultados_entrenamiento)
-    
+   
     # DEVUELVO INFO
     jsondata = {}
     jsondata['Neurons'] = resultados_entrenamiento
@@ -313,7 +334,12 @@ def bmu_return(datos,params,etiquetas,self):
     jsondata = json.dumps(jsondata)
     jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
     jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
-    
+    jsondata = json.loads(jsondata)
+
+    #Cargo el ultimo entrenamiento en el json
+    with open("resultadoPrueba.json", "w") as file:
+        json.dump(jsondata, file)
+    jsondata = json.dumps(jsondata)
     self = ok200(self)
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
@@ -331,7 +357,7 @@ def nuevosdatos_return(datos,params,etiquetas, codebook,self):
 
     datos = json.loads(datos)
     datos = [[float(value) for value in entry.values()] for entry in datos]
-    bmus = find_bmus(codebook,datos)
+    bmus = find_bmus(params,codebook,datos)
     nuevo_df = pd.DataFrame({
         'Dato': datos,  # Asumiendo que quieres numerar cada fila como 'Dato'
         'BMU': bmus
