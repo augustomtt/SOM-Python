@@ -28,7 +28,7 @@ def find_bmus(params,som_codebook, input_data_batch):
     som_codebook = np.array(som_codebook)
     input_data_batch = np.array(input_data_batch)
     input_data_batch = normalizar(input_data_batch)
-    # som_codebook = normalizar(som_codebook)
+    som_codebook = normalizar(som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
@@ -38,7 +38,7 @@ def find_bmus(params,som_codebook, input_data_batch):
 
 def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
     codebook = np.array(codebook)
-    #codebook = normalizar(codebook) Esto en caso que mandemos el codebook desnormalizado
+    codebook = normalizar(codebook) # Esto en caso que mandemos el codebook desnormalizado
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
 
@@ -312,8 +312,8 @@ def bmu_return(datos,params,etiquetas,self):
     # ARMO RESPUESTA codebook
     codebook = resultados_entrenamiento.codebook.matrix
     #Desnormalizacion de codebook
-    #codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
-    #codebook = np.round(codebook)
+    codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
+    # codebook = np.round(codebook)
 
     #Medias y dispersiones
     #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
