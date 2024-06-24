@@ -327,7 +327,7 @@ def bmu_return(datos,params,etiquetas,self):
     jsondata['Codebook']= codebook.tolist()
     jsondata['Hits'] = resultado_hits
     jsondata['Etiquetas'] = etiquetas_df
- 
+    jsondata["Parametros"] = {"filas":params["filas"],"columnas":params["columnas"]} 
     jsondata = json.dumps(jsondata)
     jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
     jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
