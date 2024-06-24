@@ -71,16 +71,13 @@ def train(data,params):
     finetuning = int(params["finetuning"])
     if(finetuning==0):
         rough = None
-    normalizacion = params["normalizacion"]
-    if normalizacion == "None":
-        normalizacion = None
     mapsize = (col,fil)
     som_test = intrasom.SOMFactory.build(data,
         #mask=-9999,
         mapsize=mapsize,
         mapshape='planar',
         lattice='hexa',
-        normalization=normalizacion,
+        normalization=None,
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
