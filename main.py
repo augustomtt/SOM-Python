@@ -77,7 +77,7 @@ def train(data,params):
         mapsize=mapsize,
         mapshape='planar',
         lattice='hexa',
-        normalization='var,
+        normalization='var',
         initialization= inicializa,
         neighborhood=fvecindad,
         training='batch',
