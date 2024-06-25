@@ -15,20 +15,21 @@ from datetime import datetime
 host = "localhost"
 port = 7777
 
-def normalizar(datos):
-    with open("datos.json", "r") as file:
-        data = json.load(file)
+def normalizar(datos,datosNormalizar):
+    # with open("datos.json", "r") as file:
+    #     data = json.load(file)
     normalizer = intrasom.object_functions.NormalizerFactory.build("var")
-    data = procesarJSON(data)
-    data = np.array(data)
+    # data = procesarJSON(data)
+    # data = np.array(data)
 
-    return normalizer.normalize_by(data,datos)
+    return normalizer.normalize_by(datos,datosNormalizar)
 #agregar datos a esta funcion
-def find_bmus(params,som_codebook, input_data_batch):
+def find_bmus(datos,som_codebook, input_data_batch):
+    datos = np.array(datos)
     som_codebook = np.array(som_codebook)
     input_data_batch = np.array(input_data_batch)
-    input_data_batch = normalizar(input_data_batch)
-    som_codebook = normalizar(som_codebook)
+    input_data_batch = normalizar(datos,input_data_batch)
+    som_codebook = normalizar(datos,som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
@@ -36,9 +37,10 @@ def find_bmus(params,som_codebook, input_data_batch):
     bmu_indices += 1
     return bmu_indices
 
-def kmeans(codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
+def kmeans(datos,codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
+    datos = np.array(datos)
     codebook = np.array(codebook)
-    codebook = normalizar(codebook) # Esto en caso que mandemos el codebook desnormalizado
+    codebook = normalizar(datos,codebook) # Esto en caso que mandemos el codebook desnormalizado
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
 
@@ -322,6 +324,7 @@ def bmu_return(datos,params,etiquetas,self):
    
     # DEVUELVO INFO
     jsondata = {}
+    jsondata['Datos'] = json_data
     jsondata['Neurons'] = resultados_entrenamiento
     jsondata['UMat'] = resultado_umat
     jsondata['Codebook']= codebook.tolist()
@@ -341,22 +344,23 @@ def bmu_return(datos,params,etiquetas,self):
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def cluster_return(datos,params,self):
+def cluster_return(datos,codebook,params,self):
     filas = int(params['filas'])
     columnas = int(params['columnas'])
     cant_clusters = int(params['cantidadClusters'])
-    resultado_clustering = kmeans(datos,filas,columnas,k=cant_clusters)
+    datos = procesarJSON(datos)
+    resultado_clustering = kmeans(datos,codebook,filas,columnas,k=cant_clusters)
     self = ok200(self)
     self.wfile.write((json.dumps(resultado_clustering.tolist())).encode())  # Send the resultados_entrenamiento JSON as the response
     self.wfile.flush() 
 
-def nuevosdatos_return(datos,params,etiquetas, codebook,self):
-
-    datos = json.loads(datos)
-    datos = [[float(value) for value in entry.values()] for entry in datos]
-    bmus = find_bmus(params,codebook,datos)
+def nuevosdatos_return(datos,nuevosDatos,etiquetas, codebook,self):
+    nuevosDatos = json.loads(nuevosDatos)
+    nuevosDatos = [[float(value) for value in entry.values()] for entry in nuevosDatos]
+    datos = procesarJSON(datos)
+    bmus = find_bmus(datos,codebook,nuevosDatos)
     nuevo_df = pd.DataFrame({
-        'Dato': datos,  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'Dato': nuevosDatos,  # Asumiendo que quieres numerar cada fila como 'Dato'
         'BMU': bmus
     })
 
@@ -385,16 +389,16 @@ def bmu_prueba(datos,params,self):
     self.wfile.flush()
     
 
-def switch_case(path, params,datos,etiquetas,codebook,self):
+def switch_case(path, params,datos,etiquetas,codebook,nuevosDatos,self):
     
     if (path == '/bmu'):
         bmu_return(datos,params,etiquetas,self)
     elif (path == '/rapida'): 
         bmu_prueba(datos,params,self)
     elif (path == '/clusters'): 
-        cluster_return(datos,params,self)
+        cluster_return(datos,codebook,params,self)
     elif (path == '/nuevosDatos'): 
-        nuevosdatos_return(datos,params,etiquetas, codebook,self)
+        nuevosdatos_return(datos,nuevosDatos,etiquetas, codebook,self)
     else:
         error404(self)
  
@@ -410,12 +414,13 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         json_data = datos_de_entrada.get("datos", {})
         etiquetas = datos_de_entrada.get("etiquetas", {})
         codebook = datos_de_entrada.get("codebook", {})
+        nuevosDatos = datos_de_entrada.get("nuevosDatos", {})
         #tipo = datos_de_entrada.get("tipo", "")
         params = datos_de_entrada.get("params", {})
-        switch_case(self.path,params,json_data,etiquetas,codebook, self)
+        switch_case(self.path,params,json_data,etiquetas,codebook,nuevosDatos,self)
 
 # Create an instance of the server with the request handler
-server = socketserver.TCPServer((host, port), MyRequestHandler)
+server = socketserver.ThreadingTCPServer((host, port), MyRequestHandler)
 
 
 # Start the server
