@@ -16,12 +16,7 @@ host = "localhost"
 port = 7777
 
 def normalizar(datos,datosNormalizar):
-    # with open("datos.json", "r") as file:
-    #     data = json.load(file)
     normalizer = intrasom.object_functions.NormalizerFactory.build("var")
-    # data = procesarJSON(data)
-    # data = np.array(data)
-
     return normalizer.normalize_by(datos,datosNormalizar)
 #agregar datos a esta funcion
 def find_bmus(datos,som_codebook, input_data_batch):
@@ -281,11 +276,7 @@ def df_etiquetas(results_dataframe, etiquetas):
     return nuevo_df
 
 def bmu_return(datos,params,etiquetas,self):
-    print("bmuuuuu")
     json_data = json.loads(datos)
-    #Cargo los datos en el json
-    with open("datos.json", "w") as file:
-        json.dump(json_data, file)
     try:
         data = procesarJSON(json_data)
     except Exception as e: #Error al validar datos! Hay que avisar
@@ -337,8 +328,8 @@ def bmu_return(datos,params,etiquetas,self):
     jsondata = json.loads(jsondata)
 
     #Cargo el ultimo entrenamiento en el json
-    with open("resultadoPrueba.json", "w") as file:
-        json.dump(jsondata, file)
+    # with open("resultadoPrueba.json", "w") as file:
+    #     json.dump(jsondata, file)
     jsondata = json.dumps(jsondata)
     self = ok200(self)
     self.wfile.write(jsondata.encode())  # Send the resultados_entrenamiento JSON as the response
