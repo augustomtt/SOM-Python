@@ -10,7 +10,8 @@ import matplotlib as mpl
 from sklearn.preprocessing import minmax_scale
 from sklearn.cluster import KMeans
 from flask import Flask
-from flask import jsonify,request
+from flask import jsonify,request,Response
+from collections import OrderedDict
 from flask_cors import CORS
 
 # Define the server address and port
@@ -27,6 +28,7 @@ def find_bmus(datos,som_codebook, input_data_batch):
     input_data_batch = np.array(input_data_batch)
     input_data_batch = normalizar(datos,input_data_batch)
     som_codebook = normalizar(datos,som_codebook)
+    print(som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
@@ -228,14 +230,7 @@ def bmu_return():
         jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
         jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
         jsondata = json.loads(jsondata)
-        response = {"Datos": jsondata['Datos'],
-                    'Neurons':jsondata['Neurons'],
-                    'UMat':jsondata['UMat'],
-                    'Codebook':jsondata['Codebook'],
-                    'Hits':jsondata['Hits'],
-                    'Etiquetas':jsondata['Etiquetas'],
-                    "Parametros":jsondata["Parametros"]}
-        return jsonify(response),200
+        return Response(json.dumps(jsondata), mimetype='application/json')
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
