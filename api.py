@@ -11,10 +11,35 @@ from sklearn.preprocessing import minmax_scale
 from sklearn.cluster import KMeans
 from flask import Flask
 from flask import jsonify,request
+from flask_cors import CORS
 
 # Define the server address and port
 host = "localhost"
 port = 7777
+
+def normalizar(datos,datosNormalizar):
+    normalizer = intrasom.object_functions.NormalizerFactory.build("var")
+    return normalizer.normalize_by(datos,datosNormalizar)
+#agregar datos a esta funcion
+def find_bmus(datos,som_codebook, input_data_batch):
+    datos = np.array(datos)
+    som_codebook = np.array(som_codebook)
+    input_data_batch = np.array(input_data_batch)
+    input_data_batch = normalizar(datos,input_data_batch)
+    som_codebook = normalizar(datos,som_codebook)
+    # Calculate the Euclidean distance between each input data point and each neuron in the SOM
+    distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
+    # Find the index of the neuron with the minimum distance for each input data point
+    bmu_indices = np.argmin(distances, axis=0)
+    bmu_indices += 1
+    return bmu_indices
+
+def kmeans(datos,codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=200):
+    datos = np.array(datos)
+    codebook = np.array(codebook)
+    codebook = normalizar(datos,codebook) # Esto en caso que mandemos el codebook desnormalizado
+    kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
+    return kmeans.reshape(fil,col)
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
@@ -146,7 +171,7 @@ def tuplas_hits(som_test):
     return dict(zip(unique, counts))
 
 app = Flask(__name__)
-
+CORS(app)
 @app.route('/', methods=['GET'])
 def home():
     print("GET")
@@ -155,62 +180,107 @@ def home():
 
 @app.route('/bmu', methods=['POST'])
 def bmu_return():
-    print("POST")
-    payload = request.get_json(force=True)
-    json_data = payload.get("datos")
-    json_data = json.loads(json_data)
-    data = procesarJSON(json_data)
-    etiquetas = payload.get("etiquetas")
-    params = payload.get("params")
-    resultados_entrenamiento = train(data,params)
-    # ARMO RESPUESTA ETIQUETAS
-    etiquetas_df = df_etiquetas(resultados_entrenamiento.results_dataframe, etiquetas)
-    etiquetas_df = pd.DataFrame.to_json(etiquetas_df)
-    etiquetas_df = json.dumps(etiquetas_df)
+    try:
+        payload = request.get_json(force=True)
+        json_data = payload.get("datos")
+        json_data = json.loads(json_data)
+        data = procesarJSON(json_data)
+        etiquetas = payload.get("etiquetas")
+        params = payload.get("params")
+        resultados_entrenamiento = train(data,params)
+        # ARMO RESPUESTA ETIQUETAS
+        etiquetas_df = df_etiquetas(resultados_entrenamiento.results_dataframe, etiquetas)
+        etiquetas_df = pd.DataFrame.to_json(etiquetas_df)
+        etiquetas_df = json.dumps(etiquetas_df)
+        
+        # ARMO RESPUESTA hits
+        resultado_hits = tuplas_hits(resultados_entrenamiento)
+        json.dumps(resultado_hits)
+
+        # ARMO RESPUESTA umat
+        resultado_umat = tuplas_umat(resultados_entrenamiento)
+        json.dumps(resultado_umat, indent = 2)
+
+        # ARMO RESPUESTA codebook
+        codebook = resultados_entrenamiento.codebook.matrix
+        #Desnormalizacion de codebook
+        codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
+        # codebook = np.round(codebook)
+
+        #Medias y dispersiones
+        #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
     
-    # ARMO RESPUESTA hits
-    resultado_hits = tuplas_hits(resultados_entrenamiento)
-    json.dumps(resultado_hits)
+        # ARMO RESPUESTA BMU
+        resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
+        resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
+        resultados_entrenamiento = json.dumps(resultados_entrenamiento)
+    
+        # DEVUELVO INFO
+        jsondata = {}
+        jsondata['Datos'] = json_data
+        jsondata['Neurons'] = resultados_entrenamiento
+        jsondata['UMat'] = resultado_umat
+        jsondata['Codebook']= codebook.tolist()
+        jsondata['Hits'] = resultado_hits
+        jsondata['Etiquetas'] = etiquetas_df
+        jsondata["Parametros"] = {"filas":params["filas"],"columnas":params["columnas"]} 
+        jsondata = json.dumps(jsondata)
+        jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
+        jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
+        jsondata = json.loads(jsondata)
+        response = {"Datos": jsondata['Datos'],
+                    'Neurons':jsondata['Neurons'],
+                    'UMat':jsondata['UMat'],
+                    'Codebook':jsondata['Codebook'],
+                    'Hits':jsondata['Hits'],
+                    'Etiquetas':jsondata['Etiquetas'],
+                    "Parametros":jsondata["Parametros"]}
+        return jsonify(response),200
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
 
-    # ARMO RESPUESTA umat
-    resultado_umat = tuplas_umat(resultados_entrenamiento)
-    json.dumps(resultado_umat, indent = 2)
+@app.route('/clusters', methods=['POST'])
+def cluster_return():
+    payload = request.get_json(force=True)
+    datos = payload.get("datos")
+    codebook = payload.get("codebook")
+    params = payload.get("params")
+    filas = int(params['filas'])
+    columnas = int(params['columnas'])
+    cant_clusters = int(params['cantidadClusters'])
+    datos = procesarJSON(datos)
+    resultado_clustering = kmeans(datos,codebook,filas,columnas,k=cant_clusters)
+    resultado_clustering = resultado_clustering.tolist()
+    return jsonify(resultado_clustering)
 
-    # ARMO RESPUESTA codebook
-    codebook = resultados_entrenamiento.codebook.matrix
-    #Desnormalizacion de codebook
-    codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
-    # codebook = np.round(codebook)
+@app.route('/nuevosDatos', methods=['POST'])
+def nuevosdatos_return():
+    payload = request.get_json(force=True)
+    datos = payload.get("datos")
+    nuevosDatos = payload.get("nuevosDatos")
+    nuevosDatos = json.loads(nuevosDatos)
+    nuevosDatos = [[float(value) for value in entry.values()] for entry in nuevosDatos]
+    codebook = payload.get("codebook")
+    datos = procesarJSON(datos)
+    bmus = find_bmus(datos,codebook,nuevosDatos)
+    nuevo_df = pd.DataFrame({
+        'Dato': nuevosDatos,  # Asumiendo que quieres numerar cada fila como 'Dato'
+        'BMU': bmus
+    })
 
-    #Medias y dispersiones
-    #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
-  
-    # ARMO RESPUESTA BMU
-    resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
-    resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
-    resultados_entrenamiento = json.dumps(resultados_entrenamiento)
-   
+    nuevo_df = pd.DataFrame.to_json(nuevo_df)
+    nuevo_df = json.dumps(nuevo_df)
+    
     # DEVUELVO INFO
     jsondata = {}
-    jsondata['Datos'] = json_data
-    jsondata['Neurons'] = resultados_entrenamiento
-    jsondata['UMat'] = resultado_umat
-    jsondata['Codebook']= codebook.tolist()
-    jsondata['Hits'] = resultado_hits
-    jsondata['Etiquetas'] = etiquetas_df
-    jsondata["Parametros"] = {"filas":params["filas"],"columnas":params["columnas"]} 
+    jsondata['Resultado'] = nuevo_df
+
     jsondata = json.dumps(jsondata)
-    jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
-    jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
+    jsondata = jsondata.replace('\\','') 
+    jsondata = jsondata.replace('""','') 
     jsondata = json.loads(jsondata)
-    response = {"Datos": jsondata['Datos'],
-                'Neurons':jsondata['Neurons'],
-                'UMat':jsondata['UMat'],
-                'Codebook':jsondata['Codebook'],
-                'Hits':jsondata['Hits'],
-                'Etiquetas':jsondata['Etiquetas'],
-                "Parametros":jsondata["Parametros"]}
-    print(response)
+    response = {"Resultado": jsondata['Resultado']}
     return jsonify(response)
 
 print(f"Server running on {host}:{port}")
