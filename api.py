@@ -11,7 +11,6 @@ from sklearn.preprocessing import minmax_scale
 from sklearn.cluster import KMeans
 from flask import Flask
 from flask import jsonify,request,Response
-from collections import OrderedDict
 from flask_cors import CORS
 
 # Define the server address and port
@@ -28,7 +27,6 @@ def find_bmus(datos,som_codebook, input_data_batch):
     input_data_batch = np.array(input_data_batch)
     input_data_batch = normalizar(datos,input_data_batch)
     som_codebook = normalizar(datos,som_codebook)
-    print(som_codebook)
     # Calculate the Euclidean distance between each input data point and each neuron in the SOM
     distances = np.linalg.norm(som_codebook[:, np.newaxis] - input_data_batch, axis=2)
     # Find the index of the neuron with the minimum distance for each input data point
@@ -89,7 +87,7 @@ def train(data,params):
         #missing=True,
         #save_nan_hist = True,
         pred_size=0)
-    som_test.train(summary=False,train_rough_len=rough,train_finetune_len=finetuning, previous_epoch = True)
+    som_test.train(save=False,summary=False,train_rough_len=rough,train_finetune_len=finetuning, previous_epoch = True)
     #EL SUMMARY EN FALSE ES PARA QUE NO GENERE LOS TXT MOLESTOS, PERO OJO QUE EN ALGUN MOMENTO PODRÍAMOS SACER INFO IMPORTANTE DE AHÍ
 
     return som_test
@@ -139,8 +137,6 @@ def tuplas_umat(som_test):
 
     # Redondeo a dos decimales
     matriz_redondeada = np.round(matriz_resultante, decimals=2)
-    # Mostrar la matriz redondeada
-    print(matriz_redondeada)
     # Escribo en un archivo el numero de neurona con el valor normalizado del color
     mi_matriz = matriz_redondeada
     # # Crear una lista de tuplas con los pares (BMU, Dist)
@@ -190,6 +186,26 @@ def bmu_return():
         etiquetas = payload.get("etiquetas")
         params = payload.get("params")
         resultados_entrenamiento = train(data,params)
+
+        # ARMO RESPUESTA PARAMETROS
+        parametros = {"filas":params["filas"],"columnas":params["columnas"],
+                      "Lattice":resultados_entrenamiento.lattice,
+                      "Vecindad":resultados_entrenamiento.neighborhood.name,
+                      "Normalizacion": resultados_entrenamiento._normalizer.name,
+                      "Inicializacion": resultados_entrenamiento.initialization,
+                      "RoughLen": resultados_entrenamiento.train_rough_len,
+                      "RoughRadioIn": resultados_entrenamiento.train_rough_radiusin,
+                      "RoughRadioFin" : resultados_entrenamiento.train_rough_radiusfin,
+                      "FineLen": resultados_entrenamiento.train_finetune_len,
+                      "FineRadioIn": resultados_entrenamiento.train_finetune_radiusin,
+                      "FineRadioFin" : resultados_entrenamiento.train_finetune_radiusfin,
+                      }
+        
+        # ARMO RESPUESTA ERRORES
+        errores = {"Topografico": resultados_entrenamiento.topographic_error,
+                   "Quantificacion": resultados_entrenamiento.calculate_quantization_error}
+    
+        
         # ARMO RESPUESTA ETIQUETAS
         etiquetas_df = df_etiquetas(resultados_entrenamiento.results_dataframe, etiquetas)
         etiquetas_df = pd.DataFrame.to_json(etiquetas_df)
@@ -207,7 +223,7 @@ def bmu_return():
         codebook = resultados_entrenamiento.codebook.matrix
         #Desnormalizacion de codebook
         codebook = resultados_entrenamiento._normalizer.denormalize_by(data,codebook)
-        # codebook = np.round(codebook)
+        codebook = np.round(codebook,decimals=2)
 
         #Medias y dispersiones
         #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
@@ -225,7 +241,8 @@ def bmu_return():
         jsondata['Codebook']= codebook.tolist()
         jsondata['Hits'] = resultado_hits
         jsondata['Etiquetas'] = etiquetas_df
-        jsondata["Parametros"] = {"filas":params["filas"],"columnas":params["columnas"]} 
+        jsondata["Parametros"] = parametros
+        jsondata["Errores"] = errores
         jsondata = json.dumps(jsondata)
         jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
         jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
