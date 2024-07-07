@@ -190,20 +190,20 @@ def bmu_return():
         # ARMO RESPUESTA PARAMETROS
         parametros = {"filas":params["filas"],"columnas":params["columnas"],
                       "Lattice":resultados_entrenamiento.lattice,
-                      "Vecindad":resultados_entrenamiento.neighborhood.name,
-                      "Normalizacion": resultados_entrenamiento._normalizer.name,
-                      "Inicializacion": resultados_entrenamiento.initialization,
-                      "RoughLen": resultados_entrenamiento.train_rough_len,
-                      "RoughRadioIn": resultados_entrenamiento.train_rough_radiusin,
-                      "RoughRadioFin" : resultados_entrenamiento.train_rough_radiusfin,
-                      "FineLen": resultados_entrenamiento.train_finetune_len,
-                      "FineRadioIn": resultados_entrenamiento.train_finetune_radiusin,
-                      "FineRadioFin" : resultados_entrenamiento.train_finetune_radiusfin,
+                      "Neighborhood Function":resultados_entrenamiento.neighborhood.name,
+                      "Normalization": resultados_entrenamiento._normalizer.name,
+                      "Inicialization": resultados_entrenamiento.initialization,
+                      "Rough Training Size": resultados_entrenamiento.train_rough_len,
+                      "Rough Training Initial Ratio": resultados_entrenamiento.train_rough_radiusin,
+                      "Rough Training Initial Ratio" : resultados_entrenamiento.train_rough_radiusfin,
+                      "Fine Training Size": resultados_entrenamiento.train_finetune_len,
+                      "Fine Training Initial Ratio": resultados_entrenamiento.train_finetune_radiusin,
+                      "Fine Training Final Ratio" : resultados_entrenamiento.train_finetune_radiusfin,
                       }
         
         # ARMO RESPUESTA ERRORES
-        errores = {"Topografico": resultados_entrenamiento.topographic_error,
-                   "Quantificacion": resultados_entrenamiento.calculate_quantization_error}
+        errores = {"Topographic": resultados_entrenamiento.topographic_error,
+                   "Quantization": resultados_entrenamiento.calculate_quantization_error}
     
         
         # ARMO RESPUESTA ETIQUETAS
