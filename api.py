@@ -172,7 +172,6 @@ app = Flask(__name__)
 CORS(app)
 @app.route('/', methods=['GET'])
 def home():
-    print("GET")
     return jsonify({"message": "Welcome to my Flask API"})
 
 
@@ -249,51 +248,57 @@ def bmu_return():
         jsondata = json.loads(jsondata)
         return Response(json.dumps(jsondata), mimetype='application/json')
     except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error durante el entrenamiento: "  + str(e)}), 500
 
 @app.route('/clusters', methods=['POST'])
 def cluster_return():
-    payload = request.get_json(force=True)
-    datos = payload.get("datos")
-    codebook = payload.get("codebook")
-    params = payload.get("params")
-    filas = int(params['filas'])
-    columnas = int(params['columnas'])
-    cant_clusters = int(params['cantidadClusters'])
-    datos = procesarJSON(datos)
-    resultado_clustering = kmeans(datos,codebook,filas,columnas,k=cant_clusters)
-    resultado_clustering = resultado_clustering.tolist()
-    return jsonify(resultado_clustering)
+    try:
+        payload = request.get_json(force=True)
+        datos = payload.get("datos")
+        codebook = payload.get("codebook")
+        params = payload.get("params")
+        filas = int(params['filas'])
+        columnas = int(params['columnas'])
+        cant_clusters = int(params['cantidadClusters'])
+        datos = procesarJSON(datos)
+        resultado_clustering = kmeans(datos,codebook,filas,columnas,k=cant_clusters)
+        resultado_clustering = resultado_clustering.tolist()
+        return jsonify(resultado_clustering),200
+    except Exception as e:
+        return jsonify({"error": "Error durante el clustering: "  + str(e)}), 500
+
 
 @app.route('/nuevosDatos', methods=['POST'])
 def nuevosdatos_return():
-    payload = request.get_json(force=True)
-    datos = payload.get("datos")
-    nuevosDatos = payload.get("nuevosDatos")
-    nuevosDatos = json.loads(nuevosDatos)
-    nuevosDatos = [[float(value) for value in entry.values()] for entry in nuevosDatos]
-    codebook = payload.get("codebook")
-    datos = procesarJSON(datos)
-    bmus = find_bmus(datos,codebook,nuevosDatos)
-    nuevo_df = pd.DataFrame({
-        'Dato': nuevosDatos,  # Asumiendo que quieres numerar cada fila como 'Dato'
-        'BMU': bmus
-    })
+    try:
+        payload = request.get_json(force=True)
+        datos = payload.get("datos")
+        nuevosDatos = payload.get("nuevosDatos")
+        nuevosDatos = json.loads(nuevosDatos)
+        nuevosDatos = [[float(value) for value in entry.values()] for entry in nuevosDatos]
+        codebook = payload.get("codebook")
+        datos = procesarJSON(datos)
+        bmus = find_bmus(datos,codebook,nuevosDatos)
+        nuevo_df = pd.DataFrame({
+            'Dato': nuevosDatos,  # Asumiendo que quieres numerar cada fila como 'Dato'
+            'BMU': bmus
+        })
 
-    nuevo_df = pd.DataFrame.to_json(nuevo_df)
-    nuevo_df = json.dumps(nuevo_df)
-    
-    # DEVUELVO INFO
-    jsondata = {}
-    jsondata['Resultado'] = nuevo_df
+        nuevo_df = pd.DataFrame.to_json(nuevo_df)
+        nuevo_df = json.dumps(nuevo_df)
+        
+        # DEVUELVO INFO
+        jsondata = {}
+        jsondata['Resultado'] = nuevo_df
 
-    jsondata = json.dumps(jsondata)
-    jsondata = jsondata.replace('\\','') 
-    jsondata = jsondata.replace('""','') 
-    jsondata = json.loads(jsondata)
-    response = {"Resultado": jsondata['Resultado']}
-    return jsonify(response)
+        jsondata = json.dumps(jsondata)
+        jsondata = jsondata.replace('\\','') 
+        jsondata = jsondata.replace('""','') 
+        jsondata = json.loads(jsondata)
+        response = {"Resultado": jsondata['Resultado']}
+        return jsonify(response),200
+    except Exception as e:
+        return jsonify({"error": "Error durante la llamada a nuevos datos: "  + str(e)}), 500
 
 print(f"Server running on {host}:{port}")
 os.makedirs('Results', exist_ok=True)
