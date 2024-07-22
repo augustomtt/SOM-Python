@@ -43,6 +43,7 @@ def kmeans(datos,codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=2
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
+    df.columns = [col.replace('\r', '') for col in df.columns]
     # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
     try:
         df = df.astype(float)
@@ -228,9 +229,11 @@ def bmu_return():
         #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
     
         # ARMO RESPUESTA BMU
+        
         resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
-        resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
-        resultados_entrenamiento = json.dumps(resultados_entrenamiento)
+        resultados_entrenamiento = resultados_entrenamiento.to_json(force_ascii=False)
+        resultados_entrenamiento = json.dumps(resultados_entrenamiento, ensure_ascii=False)
+     
     
         # DEVUELVO INFO
         jsondata = {}
@@ -242,11 +245,12 @@ def bmu_return():
         jsondata['Etiquetas'] = etiquetas_df
         jsondata["Parametros"] = parametros
         jsondata["Errores"] = errores
-        jsondata = json.dumps(jsondata)
+        jsondata = json.dumps(jsondata,ensure_ascii=False)
         jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
         jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
         jsondata = json.loads(jsondata)
-        return Response(json.dumps(jsondata), mimetype='application/json')
+      
+        return Response(json.dumps(jsondata,ensure_ascii=False), mimetype='application/json; charset=utf-8')
     except Exception as e:
         return jsonify({"error": "Error durante el entrenamiento: "  + str(e)}), 500
 
