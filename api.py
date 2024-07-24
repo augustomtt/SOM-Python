@@ -43,7 +43,6 @@ def kmeans(datos,codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=2
 
 def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
     df = pd.DataFrame(data)
-    df.columns = [col.replace('\r', '') for col in df.columns]
     # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
     try:
         df = df.astype(float)
@@ -231,6 +230,7 @@ def bmu_return():
         # ARMO RESPUESTA BMU
         
         resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
+        resultados_entrenamiento.columns  = [col.replace('B_', '') for col in resultados_entrenamiento.columns]
         resultados_entrenamiento = resultados_entrenamiento.to_json(force_ascii=False)
         resultados_entrenamiento = json.dumps(resultados_entrenamiento, ensure_ascii=False)
      
