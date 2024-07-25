@@ -228,9 +228,12 @@ def bmu_return():
         #me, st = resultados_entrenamiento._normalizer._mean_and_standard_dev(data)
     
         # ARMO RESPUESTA BMU
+        
         resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
-        resultados_entrenamiento = pd.DataFrame.to_json(resultados_entrenamiento)
-        resultados_entrenamiento = json.dumps(resultados_entrenamiento)
+        resultados_entrenamiento.columns  = [col.replace('B_', '') for col in resultados_entrenamiento.columns]
+        resultados_entrenamiento = resultados_entrenamiento.to_json(force_ascii=False)
+        resultados_entrenamiento = json.dumps(resultados_entrenamiento, ensure_ascii=False)
+     
     
         # DEVUELVO INFO
         jsondata = {}
@@ -242,11 +245,12 @@ def bmu_return():
         jsondata['Etiquetas'] = etiquetas_df
         jsondata["Parametros"] = parametros
         jsondata["Errores"] = errores
-        jsondata = json.dumps(jsondata)
+        jsondata = json.dumps(jsondata,ensure_ascii=False)
         jsondata = jsondata.replace('\\','') #ESTO NO LO PUDE ARREGLAR DE OTRA FORMA. (Funciona OK de todas formas)
         jsondata = jsondata.replace('""','') #El JSON tiene caracteres extraños/malformados, los elimine asi, pero probablemente sea un arraste de error de algo anterior.
         jsondata = json.loads(jsondata)
-        return Response(json.dumps(jsondata), mimetype='application/json')
+      
+        return Response(json.dumps(jsondata,ensure_ascii=False), mimetype='application/json; charset=utf-8')
     except Exception as e:
         return jsonify({"error": "Error durante el entrenamiento: "  + str(e)}), 500
 
