@@ -168,6 +168,11 @@ def tuplas_hits(som_test):
     counts = counts.astype(int).tolist()
     return dict(zip(unique, counts))
 
+def tuplas_bmu(som_test):
+    plot = PlotFactory(som_test)
+    # ruta completa para los archivos
+    um = plot.build_umatrix()
+    return np.round(um,decimals=2)
 app = Flask(__name__)
 CORS(app)
 @app.route('/', methods=['GET'])
@@ -185,6 +190,7 @@ def bmu_return():
         etiquetas = payload.get("etiquetas")
         params = payload.get("params")
         resultados_entrenamiento = train(data,params)
+        um = tuplas_bmu(resultados_entrenamiento)
 
         # ARMO RESPUESTA PARAMETROS
         parametros = {"filas":params["filas"],"columnas":params["columnas"],
@@ -231,6 +237,8 @@ def bmu_return():
         
         resultados_entrenamiento = resultados_entrenamiento.neurons_dataframe
         resultados_entrenamiento.columns  = [col.replace('B_', '') for col in resultados_entrenamiento.columns]
+        resultados_entrenamiento['Udist'] = um.reshape(-1,1)
+
         resultados_entrenamiento = resultados_entrenamiento.to_json(force_ascii=False)
         resultados_entrenamiento = json.dumps(resultados_entrenamiento, ensure_ascii=False)
      
