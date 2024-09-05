@@ -180,7 +180,7 @@ def home():
     return jsonify({"message": "Welcome to my Flask API"})
 
 
-@app.route('/bmu', methods=['POST'])
+@app.route('/api/train', methods=['POST'])
 def bmu_return():
     try:
         payload = request.get_json(force=True)
@@ -262,7 +262,7 @@ def bmu_return():
     except Exception as e:
         return jsonify({"error": "Error durante el entrenamiento: "  + str(e)}), 500
 
-@app.route('/clusters', methods=['POST'])
+@app.route('/api/clusters', methods=['POST'])
 def cluster_return():
     try:
         payload = request.get_json(force=True)
@@ -280,7 +280,7 @@ def cluster_return():
         return jsonify({"error": "Error durante el clustering: "  + str(e)}), 500
 
 
-@app.route('/nuevosDatos', methods=['POST'])
+@app.route('/api/bmu', methods=['POST'])
 def nuevosdatos_return():
     try:
         payload = request.get_json(force=True)
