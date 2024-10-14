@@ -1,8 +1,6 @@
 import os
 import pandas as pd
 import intrasom
-import http.server
-import socketserver
 import json
 from intrasom.visualization import PlotFactory
 import numpy as np
@@ -13,7 +11,7 @@ from flask import Flask
 from flask import jsonify,request,Response
 from flask_cors import CORS
 
-# Define the server address and port
+
 host = "localhost"
 port = 7777
 
@@ -41,18 +39,16 @@ def kmeans(datos,codebook,fil,col, k=3, init = "k-means++", n_init=5, max_iter=2
     kmeans = KMeans(n_clusters=k, init=init, n_init=n_init, max_iter=max_iter).fit(codebook).labels_+1
     return kmeans.reshape(fil,col)
 
-def procesarJSON(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
+def procesarJSON(data): 
     df = pd.DataFrame(data)
-    # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
     try:
         df = df.astype(float)
     except:
         raise
     return df
 
-def procesarJSON_string(data): #Validar que el dataframe sea válido! O que lo haga dart, una de las dos
+def procesarJSON_string(data): 
     df = pd.DataFrame(data)
-    # df.set_index(df.columns[0], inplace=True) #Importante, esto le marca que la primera columna no son datos, sino que es la etiqueta/nombre
     try:
         df = df.astype(str)
     except:
